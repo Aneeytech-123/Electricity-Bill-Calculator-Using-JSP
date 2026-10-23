@@ -1,0 +1,87 @@
+<%--
+    Shared billing logic, statically included by bill.jsp and success.jsp.
+
+    Slab-wise tariff:
+      First 50 units   - Rs. 3.50 / unit
+      Next 100 units   - Rs. 4.00 / unit   (51 - 150)
+      Next 100 units   - Rs. 5.20 / unit   (151 - 250)
+      Above 250 units  - Rs. 6.50 / unit
+--%>
+<%!
+    static final String[] SLAB_NAMES = { "First 50 Units", "Next 100 Units", "Next 100 Units", "Above 250 Units" };
+    static final double[] SLAB_RATES = { 3.50, 4.00, 5.20, 6.50 };
+    static final int[]    SLAB_SIZES = { 50, 100, 100, Integer.MAX_VALUE };
+    static final int MAX_UNITS = 100000;
+
+    /** Total bill using if-else conditions on the unit range. */
+    double calculateBill(int units) {
+        double bill;
+        if (units <= 50)
+            bill = units * 3.50;
+        else if (units <= 150)
+            bill = 50 * 3.50 + (units - 50) * 4.00;
+        else if (units <= 250)
+            bill = 50 * 3.50 + 100 * 4.00 + (units - 150) * 5.20;
+        else
+            bill = 50 * 3.50 + 100 * 4.00 + 100 * 5.20 + (units - 250) * 6.50;
+        return bill;
+    }
+
+    /** Units charged in each slab, used for the slab-wise breakdown. */
+    int[] unitsPerSlab(int units) {
+        int[] result = new int[SLAB_SIZES.length];
+        int remaining = units;
+        for (int i = 0; i < SLAB_SIZES.length && remaining > 0; i++) {
+            result[i] = Math.min(remaining, SLAB_SIZES[i]);
+            remaining -= result[i];
+        }
+        return result;
+    }
+
+    /** Formats an amount as 1,234.50 */
+    String money(double amount) {
+        return String.format(java.util.Locale.ENGLISH, "%,.2f", amount);
+    }
+
+    /** Escapes text before writing it into HTML. */
+    String esc(String s) {
+        if (s == null) return "";
+        StringBuilder sb = new StringBuilder(s.length());
+        for (char c : s.toCharArray()) {
+            switch (c) {
+                case '<':  sb.append("&lt;");   break;
+                case '>':  sb.append("&gt;");   break;
+                case '&':  sb.append("&amp;");  break;
+                case '"':  sb.append("&quot;"); break;
+                case '\'': sb.append("&#39;");  break;
+                default:   sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    String trimmed(String s) {
+        return s == null ? "" : s.trim();
+    }
+
+    String encode(String s) {
+        try {
+            return java.net.URLEncoder.encode(s == null ? "" : s, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            return "";
+        }
+    }
+
+    /**
+     * Checks the submitted values. Returns null when they are valid,
+     * otherwise an error code understood by index.jsp.
+     */
+    String validate(String name, String consumer, String unitsText) {
+        if (name.isEmpty() || name.length() > 60) return "name";
+        if (!consumer.matches("\\d{5,15}")) return "consumer";
+        if (!unitsText.matches("\\d{1,6}")) return "units";
+        int u = Integer.parseInt(unitsText);
+        if (u > MAX_UNITS) return "units";
+        return null;
+    }
+%>

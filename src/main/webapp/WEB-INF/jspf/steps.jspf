@@ -1,0 +1,26 @@
+<%-- Step tracker. Set int currentStep (1, 2 or 3) before including. --%>
+<nav class="steps" aria-label="Progress">
+<%
+    String[] stepLabels = { "Details", "Bill", "Complete" };
+    for (int s = 1; s <= stepLabels.length; s++) {
+        String state = s < currentStep ? "done" : (s == currentStep ? "active" : "todo");
+        if (s > 1) {
+%>
+    <span class="step-line <%= s <= currentStep ? "filled" : "" %>"></span>
+<%
+        }
+%>
+    <div class="step <%= state %>"<%= s == currentStep ? " aria-current=\"step\"" : "" %>>
+        <span class="step-dot">
+<%      if (state.equals("done")) { %>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+<%      } else { %>
+            <%= s %>
+<%      } %>
+        </span>
+        <span class="step-label"><%= stepLabels[s - 1] %></span>
+    </div>
+<%
+    }
+%>
+</nav>
